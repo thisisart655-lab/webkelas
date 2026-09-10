@@ -27,13 +27,13 @@
    }
    ========================================================================= */
 const firebaseConfig = {
-  apiKey:            "ISI_API_KEY_KAMU",
-  authDomain:        "ISI_PROJECT.firebaseapp.com",
-  databaseURL:       "https://ISI_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:         "ISI_PROJECT",
-  storageBucket:     "ISI_PROJECT.appspot.com",
-  messagingSenderId: "ISI_SENDER_ID",
-  appId:             "ISI_APP_ID"
+  apiKey: "AIzaSyBJETCKPOLwFnVp8Q8Zev6tL_MJAsxAAJc",
+  authDomain: "kelas6b-bfc03.firebaseapp.com",
+  databaseURL: "https://kelas6b-bfc03-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kelas6b-bfc03",
+  storageBucket: "kelas6b-bfc03.firebasestorage.app",
+  messagingSenderId: "632145539568",
+  appId: "1:632145539568:web:136471f4ec654a3097ed35"
 };
 
 const KODE_GURU    = "GURU2026";             // kode rahasia untuk daftar sebagai guru
