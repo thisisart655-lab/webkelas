@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduLearn · LMS dengan Firebase</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- ===== STYLE (sama seperti sebelumnya, bisa disimpan di style.css) ===== -->
+    <style>
+        /* ... semua CSS seperti di atas ... */
+        /* Saya sertakan di bawah agar lengkap */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        .app-container { max-width: 1200px; margin: 0 auto; padding: 20px; min-height: 100vh; }
+        .navbar {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 30px;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            cursor: pointer;
+        }
+        .logo small { font-size: 0.7rem; -webkit-text-fill-color: rgba(255,255,255,0.4); background: none; margin-left: 5px; }
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.1);
+        }
+        .nav-links a.active {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+        .nav-links .user-badge {
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-links .user-badge.admin {
+            background: rgba(76,175,80,0.15);
+            color: #4caf50;
+            border-color: rgba(76,175,80,0.2);
+        }
+        .nav-links .user-badge.user {
+            background: rgba(33,150,243,0.15);
+            color: #42a5f5;
+            border-color: rgba(33,150,243,0.2);
+        }
+        .btn-login {
+            background: rgba(255,255,255,0.08);
+            color: #fff !important;
+            padding: 8px 22px !important;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-login:hover {
+            background: rgba(255,255,255,0.18);
+            transform: scale(1.02);
+        }
+        .btn-logout {
+            background: rgba(255,50,50,0.15) !important;
+            border-color: rgba(255,50,50,0.2) !important;
+            color: #ff6b6b !important;
+        }
+        .btn-logout:hover {
+            background: rgba(255,50,50,0.25) !important;
+        }
+        /* MODAL LOGIN */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .login-modal.active { display: flex; }
+        .login-modal .modal-box {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 40px 45px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.08);
+            animation: slideUp 0.4s ease;
+            position: relative;
+        }
+        .login-modal .modal-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .login-modal .modal-box p {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .login-modal .modal-box .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .login-modal .modal-box .role-selector button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 30px;
+            border: 2px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.5);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        .login-modal .modal-box .role-selector button.active {
+            border-color: #f5576c;
+            background: rgba(245,87,108,0.1);
+            color: #fff;
+        }
+        .login-modal .modal-box .role-selector button:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        .login-modal .modal-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .login-modal .modal-box input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .login-modal .modal-box input:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06);
+        }
+        .login-modal .modal-box .btn-login-submit {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .login-modal .modal-box .btn-login-submit:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(245,87,108,0.3);
+        }
+        .login-modal .modal-box .login-error {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+        .login-modal .modal-box .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.3);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .login-modal .modal-box .close-modal:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+        /* PAGE */
+        .page-container { position: relative; min-height: 70vh; }
+        .page { display: none; animation: fadeSlide 0.5s ease forwards; }
+        .page.active { display: block; }
+        @keyframes fadeSlide {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* HERO */
+        .hero-page {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .hero-page h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+        .hero-page .hero-subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.7;
+        }
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        .hero-stats .stat {
+            background: rgba(255,255,255,0.05);
+            padding: 15px 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .hero-stats .stat .number { font-size: 2rem; font-weight: 700; color: #fff; }
+        .hero-stats .stat .label { color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 4px; }
+        /* SECTION */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .section-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            border-left: 4px solid #f5576c;
+            padding-left: 15px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        /* CARD */
+        .card {
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: rgba(255,255,255,0.15);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .card .card-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+        .card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+        .card p { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; }
+        .card .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+        }
+        .card .card-meta .badge {
+            background: rgba(255,255,255,0.06);
+            padding: 3px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.6);
+        }
+        .card .card-image {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.03);
+        }
+        .card .card-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .card .card-actions .btn {
+            padding: 4px 14px;
+            font-size: 0.75rem;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .card .card-actions .btn-edit {
+            background: rgba(33,150,243,0.2);
+            color: #42a5f5;
+            border: 1px solid rgba(33,150,243,0.15);
+        }
+        .card .card-actions .btn-edit:hover { background: rgba(33,150,243,0.3); }
+        .card .card-actions .btn-delete {
+            background: rgba(255,50,50,0.15);
+            color: #ff6b6b;
+            border: 1px solid rgba(255,50,50,0.15);
+        }
+        .card .card-actions .btn-delete:hover { background: rgba(255,50,50,0.25); }
+        /* SUB PAGE */
+        .sub-page-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(30px);
+            z-index: 1000;
+            padding: 40px 20px;
+            overflow-y: auto;
+            animation: fadeIn 0.4s ease;
+        }
+        .sub-page-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+        .sub-page-content {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border-radius: 40px;
+            padding: 40px 45px;
+            border: 1px solid rgba(255,255,255,0.08);
+            animation: slideUp 0.5s ease;
+            position: relative;
+            margin: auto;
+        }
+        .sub-page-content .close-sub {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            color: #fff;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sub-page-content .close-sub:hover {
+            background: rgba(255,255,255,0.12);
+            transform: rotate(90deg);
+        }
+        .sub-page-content h2 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sub-page-content .sub-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+        }
+        .sub-page-content .sub-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.03);
+        }
+        .sub-page-content .sub-list { list-style: none; padding: 0; }
+        .sub-page-content .sub-list li {
+            padding: 14px 20px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            border-left: 3px solid #f5576c;
+            color: rgba(255,255,255,0.85);
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+        .sub-page-content .sub-list li:hover {
+            background: rgba(255,255,255,0.06);
+            transform: translateX(5px);
+        }
+        .sub-page-content .sub-list li::before { content: '▸ '; color: #f5576c; }
+        /* QUIZ */
+        .quiz-container { margin-top: 20px; }
+        .quiz-question {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .quiz-question .question-text {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .quiz-question .question-text .q-actions { display: flex; gap: 6px; }
+        .quiz-question .question-text .q-actions .btn {
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .quiz-question .question-image {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.02);
+        }
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        .quiz-option:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.06);
+        }
+        .quiz-option input[type="radio"] {
+            accent-color: #f5576c;
+            width: 18px; height: 18px;
+            cursor: pointer;
+        }
+        .quiz-option label { cursor: pointer; flex: 1; color: rgba(255,255,255,0.8); }
+        .quiz-option.correct {
+            background: rgba(0,255,100,0.08);
+            border-color: rgba(0,255,100,0.2);
+        }
+        .quiz-option.wrong {
+            background: rgba(255,50,50,0.08);
+            border-color: rgba(255,50,50,0.2);
+        }
+        .quiz-result {
+            padding: 15px 20px;
+            border-radius: 16px;
+            margin-top: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .quiz-result.pass {
+            background: rgba(0,255,100,0.08);
+            border: 1px solid rgba(0,255,100,0.15);
+            color: #4caf50;
+        }
+        .quiz-result.fail {
+            background: rgba(255,50,50,0.08);
+            border: 1px solid rgba(255,50,50,0.15);
+            color: #ff6b6b;
+        }
+        /* ADMIN PANEL */
+        .admin-panel {
+            display: none;
+            margin-top: 30px;
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .admin-panel.active { display: block; }
+        .admin-panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-panel .admin-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 15px 0 20px;
+        }
+        .admin-panel .admin-controls input,
+        .admin-panel .admin-controls textarea {
+            flex: 1;
+            min-width: 160px;
+            padding: 10px 18px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .admin-panel .admin-controls textarea {
+            min-width: 250px;
+            border-radius: 16px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .admin-panel .admin-controls input::placeholder,
+        .admin-panel .admin-controls textarea::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .admin-panel .admin-controls input:focus,
+        .admin-panel .admin-controls textarea:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.15);
+        }
+        .admin-panel .admin-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .admin-panel .admin-item:hover { background: rgba(255,255,255,0.05); }
+        .admin-panel .admin-item .item-title {
+            font-weight: 500;
+            min-width: 120px;
+            flex: 1;
+        }
+        .admin-panel .admin-item .item-desc {
+            color: rgba(255,255,255,0.5);
+            flex: 2;
+            min-width: 120px;
+            font-size: 0.85rem;
+        }
+        .admin-panel .admin-item .item-type {
+            font-size: 0.7rem;
+            padding: 2px 12px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.4);
+        }
+        .admin-panel .admin-item .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+        .admin-panel .admin-item .btn-group .btn {
+            padding: 4px 14px;
+            font-size: 0.75rem;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #fff;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            border-color: transparent;
+        }
+        .btn-primary:hover {
+            transform: scale(1.03);
+            box-shadow: 0 8px 30px rgba(245,87,108,0.3);
+        }
+        .btn-success {
+            background: rgba(76,175,80,0.2);
+            color: #4caf50;
+            border: 1px solid rgba(76,175,80,0.15);
+        }
+        .btn-success:hover { background: rgba(76,175,80,0.3); }
+        .btn-danger {
+            background: rgba(255,50,50,0.15);
+            color: #ff6b6b;
+            border: 1px solid rgba(255,50,50,0.15);
+        }
+        .btn-danger:hover { background: rgba(255,50,50,0.25); }
+        .btn-warning {
+            background: rgba(255,193,7,0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255,193,7,0.15);
+        }
+        .btn-warning:hover { background: rgba(255,193,7,0.25); }
+        .btn-info {
+            background: rgba(33,150,243,0.15);
+            color: #42a5f5;
+            border: 1px solid rgba(33,150,243,0.15);
+        }
+        .btn-info:hover { background: rgba(33,150,243,0.25); }
+        .admin-message { padding: 10px 0; color: rgba(255,255,255,0.7); min-height: 40px; }
+        /* SYNC AREA */
+        .sync-area {
+            background: linear-gradient(135deg, rgba(33,150,243,0.08), rgba(33,150,243,0.02));
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin: 10px 0 20px;
+            border: 2px solid rgba(33,150,243,0.15);
+        }
+        .sync-area .sync-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #42a5f5;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sync-area .sync-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .sync-area .sync-buttons .btn { padding: 10px 24px; font-size: 0.85rem; }
+        .sync-area .sync-status {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .sync-area .sync-status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .sync-area .sync-status .dot.green { background: #4caf50; }
+        .sync-area .sync-status .dot.yellow { background: #ffc107; }
+        .sync-area .sync-status .dot.red { background: #f44336; }
+        .sync-area .info-text {
+            color: rgba(255,255,255,0.3);
+            font-size: 0.75rem;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .sync-area .share-link-area {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .sync-area .share-link-area input {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .sync-area .share-link-area input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .sync-area .share-link-area input:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.15);
+        }
+        .sync-area .share-link-area .btn { padding: 8px 18px; font-size: 0.8rem; }
+        /* TOAST */
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+            z-index: 9999;
+            animation: slideUp 0.3s ease;
+            max-width: 400px;
+        }
+        .toast-notification.success { border-color: rgba(76,175,80,0.3); }
+        .toast-notification.error { border-color: rgba(255,50,50,0.3); }
+        .toast-notification.info { border-color: rgba(33,150,243,0.3); }
+        /* EDITOR OVERLAY */
+        .editor-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(30px);
+            z-index: 1001;
+            padding: 40px 20px;
+            overflow-y: auto;
+            animation: fadeIn 0.4s ease;
+        }
+        .editor-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+        .editor-content {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border-radius: 40px;
+            padding: 40px 45px;
+            border: 1px solid rgba(255,255,255,0.08);
+            animation: slideUp 0.5s ease;
+            position: relative;
+            margin: auto;
+        }
+        .editor-content .close-editor {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: rgba(255,255,255,0.06);
+            border: none;
+            color: #fff;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .editor-content .close-editor:hover {
+            background: rgba(255,255,255,0.12);
+            transform: rotate(90deg);
+        }
+        .editor-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .editor-content label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+        .editor-content input,
+        .editor-content textarea {
+            width: 100%;
+            padding: 12px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .editor-content input:focus,
+        .editor-content textarea:focus {
+            outline: none;
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06);
+        }
+        .editor-content textarea { min-height: 80px; resize: vertical; }
+        .editor-content .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px; }
+        .editor-content .btn-group .btn { padding: 12px 32px; }
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .navbar { padding: 12px 18px; top: 10px; }
+            .logo { font-size: 1.4rem; }
+            .nav-links { gap: 4px; }
+            .nav-links a { padding: 6px 12px; font-size: 0.8rem; }
+            .hero-page h1 { font-size: 2.2rem; }
+            .sub-page-content { padding: 30px 20px; }
+            .sub-page-content h2 { font-size: 1.6rem; }
+            .admin-panel { padding: 20px; }
+            .admin-item { flex-direction: column; align-items: stretch; }
+            .admin-item .btn-group { margin-left: 0; justify-content: flex-end; }
+            .hero-stats { gap: 15px; }
+            .hero-stats .stat { padding: 10px 20px; }
+            .quiz-question .question-text { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .login-modal .modal-box { padding: 30px 20px; margin: 0 15px; }
+            .toast-notification { bottom: 15px; right: 15px; left: 15px; max-width: none; }
+            .sync-area .sync-buttons { flex-direction: column; align-items: stretch; }
+            .sync-area .sync-buttons .btn { text-align: center; }
+            .sync-area .share-link-area { flex-direction: column; }
+            .sync-area .share-link-area input { width: 100%; }
+            .editor-content { padding: 30px 20px; }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+    </style>
+</head>
+<body>
+<div class="app-container">
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <div class="logo" id="siteLogo">EduLearn <small>LMS</small></div>
+        <div class="nav-links">
+            <a class="active" data-page="beranda">Beranda</a>
+            <a data-page="materi">Materi</a>
+            <a data-page="latihan">Latihan</a>
+            <a data-page="tentang">Tentang</a>
+            <span id="userBadge" class="user-badge">👤 Tamu</span>
+            <button class="btn-login" id="loginToggle">🔑 Login</button>
+            <button class="btn-login btn-logout" id="logoutBtn" style="display:none;">🚪 Logout</button>
+        </div>
+    </nav>
+
+    <!-- ===== PAGE CONTAINER ===== -->
+    <div class="page-container">
+        <div class="page active" id="page-beranda">
+            <div class="hero-page">
+                <h1 id="heroTitle">Mulai Belajar Sekarang</h1>
+                <p class="hero-subtitle" id="heroSubtitle">Platform pembelajaran dengan Firebase. Data tersimpan di cloud, sinkron otomatis antar perangkat.</p>
+                <div class="hero-stats">
+                    <div class="stat"><div class="number" id="totalMateri">0</div><div class="label">Materi</div></div>
+                    <div class="stat"><div class="number" id="totalLatihan">0</div><div class="label">Latihan</div></div>
+                    <div class="stat"><div class="number" id="totalSub">0</div><div class="label">Sub Konten</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="page" id="page-materi">
+            <div class="section-header">
+                <h2>📚 Materi Pembelajaran</h2>
+                <span style="color:rgba(255,255,255,0.3); font-size:0.9rem;" id="materiCount">0 materi</span>
+            </div>
+            <div id="materiContainer" class="grid-container"></div>
+            <div id="adminMateriAdd" style="display:none; margin-bottom:20px;">
+                <button class="btn btn-primary" id="showAddMateriBtn">+ Tambah Materi</button>
+                <div id="addMateriForm" style="display:none; margin-top:10px; background:rgba(255,255,255,0.03); padding:20px; border-radius:16px;">
+                    <input type="text" id="newMateriJudul" placeholder="Judul materi" style="width:100%; padding:10px 16px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff; margin-bottom:10px;">
+                    <input type="text" id="newMateriDeskripsi" placeholder="Deskripsi" style="width:100%; padding:10px 16px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff; margin-bottom:10px;">
+                    <input type="text" id="newMateriImage" placeholder="URL Gambar (opsional)" style="width:100%; padding:10px 16px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff; margin-bottom:10px;">
+                    <textarea id="newMateriSub" placeholder="Sub materi (pisahkan dengan koma)" style="width:100%; padding:10px 16px; border-radius:16px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff; min-height:60px; margin-bottom:10px;"></textarea>
+                    <button class="btn btn-success" id="saveNewMateriBtn">Simpan Materi</button>
+                    <button class="btn" id="cancelAddMateriBtn" style="background:rgba(255,255,255,0.06);">Batal</button>
+                </div>
+            </div>
+        </div>
+        <div class="page" id="page-latihan">
+            <div class="section-header">
+                <h2>✍️ Latihan Pembelajaran</h2>
+                <span style="color:rgba(255,255,255,0.3); font-size:0.9rem;" id="latihanCount">0 latihan</span>
+            </div>
+            <div id="latihanContainer" class="grid-container"></div>
+            <div id="adminLatihanAdd" style="display:none; margin-bottom:20px;">
+                <button class="btn btn-primary" id="showAddLatihanBtn">+ Tambah Latihan</button>
+                <div id="addLatihanForm" style="display:none; margin-top:10px; background:rgba(255,255,255,0.03); padding:20px; border-radius:16px;">
+                    <input type="text" id="newLatihanJudul" placeholder="Judul latihan" style="width:100%; padding:10px 16px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff; margin-bottom:10px;">
+                    <input type="text" id="newLatihanDeskripsi" placeholder="Deskripsi" style="width:100%; padding:10px 16px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff; margin-bottom:10px;">
+                    <button class="btn btn-success" id="saveNewLatihanBtn">Simpan Latihan</button>
+                    <button class="btn" id="cancelAddLatihanBtn" style="background:rgba(255,255,255,0.06);">Batal</button>
+                </div>
+            </div>
+        </div>
+        <div class="page" id="page-tentang">
+            <div class="hero-page" style="padding:40px 20px;">
+                <h2 style="font-size:2.5rem; -webkit-text-fill-color:#fff; background:none;">Tentang EduLearn</h2>
+                <p style="max-width:700px; margin:20px auto; color:rgba(255,255,255,0.6);">
+                    EduLearn dengan Firebase Realtime Database. Semua data tersimpan di cloud, sehingga setiap perubahan langsung terlihat di semua perangkat.
+                </p>
+                <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; margin-top:20px;">
+                    <span style="background:rgba(255,255,255,0.04); padding:8px 20px; border-radius:30px; border:1px solid rgba(255,255,255,0.06);">🔥 Firebase</span>
+                    <span style="background:rgba(255,255,255,0.04); padding:8px 20px; border-radius:30px; border:1px solid rgba(255,255,255,0.06);">📡 Real-time</span>
+                    <span style="background:rgba(255,255,255,0.04); padding:8px 20px; border-radius:30px; border:1px solid rgba(255,255,255,0.06);">🌐 Multi-device</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN PANEL ===== -->
+    <div class="admin-panel" id="adminPanel">
+        <h2>⚙️ Panel Admin <span style="font-size:0.7rem; font-weight:400; color:rgba(255,255,255,0.3);">Firebase Sync</span></h2>
+        <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+            <span style="color:rgba(100,255,100,0.6); font-weight:500;">✅ Mode Admin Aktif</span>
+            <span style="color:rgba(33,150,243,0.5); font-size:0.85rem;">📡 Data tersimpan di Firebase</span>
+        </div>
+
+        <!-- Edit Header -->
+        <div style="color:rgba(255,255,255,0.7); font-weight:600; margin-top:15px;">✏️ Edit Header & Judul</div>
+        <div style="display:flex; flex-wrap:wrap; gap:12px; margin:10px 0 15px; padding:15px; background:rgba(255,255,255,0.03); border-radius:16px;">
+            <input type="text" id="editSiteTitle" placeholder="Judul Website" style="flex:1; min-width:200px; padding:10px 18px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff;">
+            <input type="text" id="editHeroTitle" placeholder="Hero Title" style="flex:1; min-width:200px; padding:10px 18px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff;">
+            <input type="text" id="editHeroSubtitle" placeholder="Hero Subtitle" style="flex:1; min-width:200px; padding:10px 18px; border-radius:30px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.04); color:#fff;">
+            <button class="btn btn-primary" id="saveHeaderBtn">Simpan Header</button>
+        </div>
+
+        <!-- Daftar konten -->
+        <div style="margin-top: 20px;">
+            <div style="color:rgba(255,255,255,0.3); font-weight:500; margin-bottom:10px;">📋 Daftar Semua Konten</div>
+            <div id="adminListContainer"></div>
+        </div>
+        <div class="admin-message" id="adminMessage"></div>
+    </div>
+
+    <!-- ===== LOGIN MODAL ===== -->
+    <div class="login-modal" id="loginModal">
+        <div class="modal-box">
+            <button class="close-modal" id="closeModalBtn">✕</button>
+            <h2>🔐 Login</h2>
+            <p>Pilih peran dan masukkan password</p>
+            <div class="role-selector">
+                <button class="active" data-role="admin">👑 Admin</button>
+                <button data-role="user">👤 Siswa</button>
+            </div>
+            <input type="password" id="loginPassword" placeholder="Masukkan password" autocomplete="off">
+            <button class="btn-login-submit" id="loginSubmitBtn">Masuk</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- ===== SUB PAGE OVERLAY ===== -->
+    <div class="sub-page-overlay" id="subPageOverlay">
+        <div class="sub-page-content">
+            <button class="close-sub" id="closeSubPage">✕</button>
+            <h2 id="subTitle">Judul</h2>
+            <p class="sub-desc" id="subDesc">Deskripsi</p>
+            <img class="sub-image" id="subImage" style="display:none;" alt="Gambar materi">
+            <div id="subContentContainer"></div>
+            <div id="subEditActions" style="display:none; margin-top:20px; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-primary" id="subEditBtn">✎ Edit Konten</button>
+                <button class="btn btn-danger" id="subDeleteBtn">🗑 Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== EDITOR OVERLAY ===== -->
+    <div class="editor-overlay" id="editorOverlay">
+        <div class="editor-content">
+            <button class="close-editor" id="closeEditor">✕</button>
+            <h2 id="editorTitle">✏️ Edit Konten</h2>
+            <div id="editorForm">
+                <label>Judul</label>
+                <input type="text" id="editItemJudul">
+                <label>Deskripsi</label>
+                <textarea id="editItemDeskripsi"></textarea>
+                <div id="editItemImageGroup" style="display:none;">
+                    <label>URL Gambar</label>
+                    <input type="text" id="editItemImage">
+                </div>
+                <div id="editItemSubGroup" style="display:none;">
+                    <label>Sub konten (pisahkan dengan koma)</label>
+                    <textarea id="editItemSub"></textarea>
+                </div>
+                <div id="editItemQuestionsGroup" style="display:none;">
+                    <label>Soal (JSON format)</label>
+                    <textarea id="editItemQuestions" style="min-height:150px;"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-success" id="saveItemEditBtn">💾 Simpan Perubahan</button>
+                    <button class="btn" id="cancelItemEditBtn" style="background:rgba(255,255,255,0.06);">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // KONFIGURASI FIREBASE
+    // Ganti dengan konfigurasi Firebase Anda sendiri
+    // ============================================
+    apiKey: "AIzaSyBJETCKPOLwFnVp8Q8Zev6tL_MJAsxAAJc",
+  authDomain: "kelas6b-bfc03.firebaseapp.com",
+  databaseURL: "https://kelas6b-bfc03-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kelas6b-bfc03",
+  storageBucket: "kelas6b-bfc03.firebasestorage.app",
+  messagingSenderId: "632145539568",
+  appId: "1:632145539568:web:136471f4ec654a3097ed35"
+  
+    };
+
+    // ============================================
+    // INISIALISASI FIREBASE
+    // ============================================
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // ============================================
+    // STATE
+    // ============================================
+    let materiList = [];
+    let latihanList = [];
+    let headerData = {};
+    let currentUser = null;
+    let editingItem = null;
+    let subPageItem = null;
+    let isSyncing = false;
+
+    // ============================================
+    // DOM REFS
+    // ============================================
+    const materiContainer = document.getElementById('materiContainer');
+    const latihanContainer = document.getElementById('latihanContainer');
+    const adminPanel = document.getElementById('adminPanel');
+    const adminListContainer = document.getElementById('adminListContainer');
+    const adminMessage = document.getElementById('adminMessage');
+    const subPageOverlay = document.getElementById('subPageOverlay');
+    const subTitle = document.getElementById('subTitle');
+    const subDesc = document.getElementById('subDesc');
+    const subImage = document.getElementById('subImage');
+    const subContentContainer = document.getElementById('subContentContainer');
+    const subEditActions = document.getElementById('subEditActions');
+    const userBadge = document.getElementById('userBadge');
+    const loginModal = document.getElementById('loginModal');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginError = document.getElementById('loginError');
+    const roleBtns = document.querySelectorAll('.role-selector button');
+
+    // ============================================
+    // TOAST
+    // ============================================
+    function showToast(message, type = 'info') {
+        const existing = document.querySelector('.toast-notification');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification ' + type;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
+
+    // ============================================
+    // FUNGSI SINCRONISASI DENGAN FIREBASE
+    // ============================================
+    function pushToFirebase() {
+        if (isSyncing) return;
+        isSyncing = true;
+        const data = {
+            header: headerData,
+            materi: materiList,
+            latihan: latihanList,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        database.ref('edulearn_data').set(data)
+            .then(() => {
+                isSyncing = false;
+                showToast('✅ Data berhasil disimpan ke Firebase!', 'success');
+            })
+            .catch((error) => {
+                isSyncing = false;
+                showToast('⚠️ Gagal menyimpan ke Firebase: ' + error.message, 'error');
+            });
+    }
+
+    function pullFromFirebase() {
+        database.ref('edulearn_data').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.header) {
+                    headerData = data.header;
+                    localStorage.setItem('edulearn_header', JSON.stringify(headerData));
+                }
+                if (data.materi) {
+                    materiList = data.materi;
+                    localStorage.setItem('edulearn_materi', JSON.stringify(materiList));
+                }
+                if (data.latihan) {
+                    latihanList = data.latihan;
+                    localStorage.setItem('edulearn_latihan', JSON.stringify(latihanList));
+                }
+                renderAll();
+                showToast('🔄 Data diperbarui dari Firebase (real-time)!', 'info');
+            }
+        }, (error) => {
+            showToast('⚠️ Gagal sinkron dari Firebase: ' + error.message, 'error');
+        });
+    }
+
+    // ============================================
+    // LOAD / SAVE (localStorage sebagai cache)
+    // ============================================
+    function loadAll() {
+        try {
+            const storedMateri = localStorage.getItem('edulearn_materi');
+            const storedLatihan = localStorage.getItem('edulearn_latihan');
+            const storedHeader = localStorage.getItem('edulearn_header');
+            materiList = storedMateri ? JSON.parse(storedMateri) : [];
+            latihanList = storedLatihan ? JSON.parse(storedLatihan) : [];
+            headerData = storedHeader ? JSON.parse(storedHeader) : { siteTitle: 'EduLearn', heroTitle: 'Mulai Belajar Sekarang', heroSubtitle: 'Platform pembelajaran dengan Firebase.' };
+        } catch (e) {
+            materiList = [];
+            latihanList = [];
+            headerData = { siteTitle: 'EduLearn', heroTitle: 'Mulai Belajar Sekarang', heroSubtitle: 'Platform pembelajaran dengan Firebase.' };
+        }
+        if (!materiList || materiList.length === 0) {
+            materiList = [
+                { id: 'm1', judul: 'Pengantar HTML & CSS', deskripsi: 'Dasar struktur web.', image: '', sub: ['Tag HTML', 'CSS Selector', 'Flexbox'] },
+                { id: 'm2', judul: 'JavaScript Interaktif', deskripsi: 'Logika pemrograman.', image: '', sub: ['Variabel', 'Fungsi', 'DOM'] }
+            ];
+        }
+        if (!latihanList || latihanList.length === 0) {
+            latihanList = [
+                { id: 'l1', judul: 'Latihan HTML', deskripsi: 'Uji pemahaman HTML.', questions: [{ question: 'Apa fungsi h1?', options: ['Heading', 'Paragraf', 'Link'], answer: 0 }] }
+            ];
+        }
+        saveAll();
+    }
+
+    function saveAll() {
+        try {
+            localStorage.setItem('edulearn_materi', JSON.stringify(materiList));
+            localStorage.setItem('edulearn_latihan', JSON.stringify(latihanList));
+            localStorage.setItem('edulearn_header', JSON.stringify(headerData));
+        } catch (e) {}
+        // Kirim ke Firebase
+        pushToFirebase();
+    }
+
+    // ============================================
+    // RENDER
+    // ============================================
+    function renderAll() {
+        renderHeader();
+        renderPublic();
+        if (currentUser === 'admin') {
+            renderAdminList();
+            adminPanel.classList.add('active');
+            document.getElementById('adminMateriAdd').style.display = 'block';
+            document.getElementById('adminLatihanAdd').style.display = 'block';
+            if (subPageItem) subEditActions.style.display = 'flex';
+        } else {
+            adminPanel.classList.remove('active');
+            document.getElementById('adminMateriAdd').style.display = 'none';
+            document.getElementById('adminLatihanAdd').style.display = 'none';
+            subEditActions.style.display = 'none';
+        }
+        updateStats();
+    }
+
+    function renderHeader() {
+        document.getElementById('siteLogo').innerHTML = headerData.siteTitle + ' <small>LMS</small>';
+        document.getElementById('heroTitle').textContent = headerData.heroTitle;
+        document.getElementById('heroSubtitle').textContent = headerData.heroSubtitle;
+        if (currentUser === 'admin') {
+            document.getElementById('editSiteTitle').value = headerData.siteTitle || '';
+            document.getElementById('editHeroTitle').value = headerData.heroTitle || '';
+            document.getElementById('editHeroSubtitle').value = headerData.heroSubtitle || '';
+        }
+    }
+
+    function renderPublic() {
+        // Materi
+        if (materiList.length === 0) {
+            materiContainer.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.3);">Belum ada materi.</div>`;
+        } else {
+            materiContainer.innerHTML = materiList.map(m => `
+                <div class="card" data-id="${m.id}" data-type="materi">
+                    ${m.image ? `<img class="card-image" src="${escapeHtml(m.image)}" alt="${escapeHtml(m.judul)}">` : '<span class="card-icon">📘</span>'}
+                    <h3>${escapeHtml(m.judul)}</h3>
+                    <p>${escapeHtml(m.deskripsi)}</p>
+                    <div class="card-meta">
+                        <span>${m.sub ? m.sub.length : 0} sub materi</span>
+                        <span class="badge">Klik untuk lihat</span>
+                    </div>
+                    ${currentUser === 'admin' ? `
+                    <div class="card-actions">
+                        <button class="btn btn-edit" data-action="edit" data-id="${m.id}" data-type="materi">✎ Edit</button>
+                        <button class="btn btn-delete" data-action="delete" data-id="${m.id}" data-type="materi">✕ Hapus</button>
+                    </div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Latihan
+        if (latihanList.length === 0) {
+            latihanContainer.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(255,255,255,0.3);">Belum ada latihan.</div>`;
+        } else {
+            latihanContainer.innerHTML = latihanList.map(l => `
+                <div class="card" data-id="${l.id}" data-type="latihan">
+                    <span class="card-icon">📝</span>
+                    <h3>${escapeHtml(l.judul)}</h3>
+                    <p>${escapeHtml(l.deskripsi)}</p>
+                    <div class="card-meta">
+                        <span>${l.questions ? l.questions.length : 0} soal</span>
+                        <span class="badge">Klik untuk kerjakan</span>
+                    </div>
+                    ${currentUser === 'admin' ? `
+                    <div class="card-actions">
+                        <button class="btn btn-edit" data-action="edit" data-id="${l.id}" data-type="latihan">✎ Edit</button>
+                        <button class="btn btn-delete" data-action="delete" data-id="${l.id}" data-type="latihan">✕ Hapus</button>
+                    </div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Event click card
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('.card-actions') || e.target.closest('.btn')) return;
+                const id = this.dataset.id;
+                const type = this.dataset.type;
+                const list = type === 'materi' ? materiList : latihanList;
+                const item = list.find(x => x.id === id);
+                if (item) {
+                    if (type === 'materi') openMateriPage(item);
+                    else openLatihanPage(item);
+                }
+            });
+        });
+
+        // Event card actions (edit/delete)
+        document.querySelectorAll('.card-actions .btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.dataset.action;
+                const id = this.dataset.id;
+                const type = this.dataset.type;
+                if (action === 'edit') {
+                    openEditor(type, id);
+                } else if (action === 'delete') {
+                    if (confirm(`Hapus ${type} ini?`)) {
+                        if (type === 'materi') {
+                            materiList = materiList.filter(m => m.id !== id);
+                        } else {
+                            latihanList = latihanList.filter(l => l.id !== id);
+                        }
+                        saveAll();
+                        renderAll();
+                        showToast('🗑️ Konten dihapus.', 'info');
+                    }
+                }
+            });
+        });
+
+        updateStats();
+    }
+
+    function renderAdminList() {
+        if (!adminListContainer) return;
+        const allItems = [
+            ...materiList.map(m => ({ ...m, type: 'materi', icon: '📘' })),
+            ...latihanList.map(l => ({ ...l, type: 'latihan', icon: '📝' }))
+        ];
+        if (allItems.length === 0) {
+            adminListContainer.innerHTML = `<div style="color:rgba(255,255,255,0.3); padding:15px 0;">Belum ada konten.</div>`;
+            return;
+        }
+        let html = '';
+        allItems.forEach(item => {
+            const subCount = item.type === 'materi' ? (item.sub ? item.sub.length : 0) : (item.questions ? item.questions.length : 0);
+            html += `
+                <div class="admin-item">
+                    <span class="item-title">${item.icon} ${escapeHtml(item.judul)}</span>
+                    <span class="item-desc">${escapeHtml(item.deskripsi)}</span>
+                    <span class="item-type">${item.type} (${subCount})</span>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" data-action="edit" data-id="${item.id}" data-type="${item.type}">✎</button>
+                        <button class="btn btn-danger" data-action="delete" data-id="${item.id}" data-type="${item.type}">✕</button>
+                    </div>
+                </div>
+            `;
+        });
+        adminListContainer.innerHTML = html;
+
+        adminListContainer.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const action = this.dataset.action;
+                const id = this.dataset.id;
+                const type = this.dataset.type;
+                if (action === 'edit') {
+                    openEditor(type, id);
+                } else if (action === 'delete') {
+                    if (confirm(`Hapus ${type} ini?`)) {
+                        if (type === 'materi') {
+                            materiList = materiList.filter(m => m.id !== id);
+                        } else {
+                            latihanList = latihanList.filter(l => l.id !== id);
+                        }
+                        saveAll();
+                        renderAll();
+                        showToast('🗑️ Konten dihapus.', 'info');
+                    }
+                }
+            });
+        });
+    }
+
+    function updateStats() {
+        const totalMateri = materiList.length;
+        const totalLatihan = latihanList.length;
+        const totalSub = materiList.reduce((acc, m) => acc + (m.sub ? m.sub.length : 0), 0) +
+            latihanList.reduce((acc, l) => acc + (l.questions ? l.questions.length : 0), 0);
+        document.getElementById('totalMateri').textContent = totalMateri;
+        document.getElementById('totalLatihan').textContent = totalLatihan;
+        document.getElementById('totalSub').textContent = totalSub;
+        document.getElementById('materiCount').textContent = totalMateri + ' materi';
+        document.getElementById('latihanCount').textContent = totalLatihan + ' latihan';
+    }
+
+    // ============================================
+    // OPEN MATERI / LATIHAN PAGE
+    // ============================================
+    function openMateriPage(item) {
+        subPageItem = item;
+        subTitle.textContent = item.judul;
+        subDesc.textContent = item.deskripsi;
+        if (item.image) {
+            subImage.style.display = 'block';
+            subImage.src = item.image;
+            subImage.alt = item.judul;
+        } else {
+            subImage.style.display = 'none';
+        }
+        if (item.sub && item.sub.length > 0) {
+            subContentContainer.innerHTML = `<ul class="sub-list">${item.sub.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>`;
+        } else {
+            subContentContainer.innerHTML = `<p style="color:rgba(255,255,255,0.3); padding:20px 0;">Belum ada sub materi.</p>`;
+        }
+        updateSubActions(item, 'materi');
+        subPageOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openLatihanPage(item) {
+        subPageItem = item;
+        subTitle.textContent = item.judul;
+        subDesc.textContent = item.deskripsi;
+        subImage.style.display = 'none';
+
+        if (item.questions && item.questions.length > 0) {
+            let html = `<div class="quiz-container">`;
+            item.questions.forEach((q, idx) => {
+                html += `
+                    <div class="quiz-question" data-qindex="${idx}">
+                        <div class="question-text">
+                            <span>${idx+1}. ${escapeHtml(q.question)}</span>
+                            ${currentUser === 'admin' ? `
+                                <div class="q-actions">
+                                    <button class="btn btn-primary" onclick="window.editQuestion('${item.id}', ${idx})">✎ Edit</button>
+                                    <button class="btn btn-danger" onclick="window.deleteQuestion('${item.id}', ${idx})">✕</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${q.image ? `<img class="question-image" src="${escapeHtml(q.image)}" alt="Gambar soal">` : ''}
+                        <div class="quiz-options">
+                            ${q.options.map((opt, oi) => `
+                                <div class="quiz-option" data-optindex="${oi}">
+                                    <input type="radio" name="q${idx}" value="${oi}" id="q${idx}_${oi}">
+                                    <label for="q${idx}_${oi}">${escapeHtml(opt)}</label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            html += `
+                <button class="btn btn-primary" id="submitQuizBtn" style="margin-top:15px;">Kirim Jawaban</button>
+                <div id="quizResult" class="quiz-result" style="display:none;"></div>
+            `;
+            subContentContainer.innerHTML = html;
+
+            if (currentUser === 'admin') {
+                const container = document.getElementById('subContentContainer');
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn btn-success';
+                addBtn.textContent = '+ Tambah Soal';
+                addBtn.style.marginTop = '15px';
+                addBtn.style.marginLeft = '10px';
+                addBtn.onclick = function() { addQuestionToLatihan(item.id); };
+                container.appendChild(addBtn);
+            }
+
+            document.getElementById('submitQuizBtn')?.addEventListener('click', function() {
+                let correctCount = 0, total = item.questions.length, allAnswered = true;
+                item.questions.forEach((q, idx) => {
+                    const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+                    if (selected) {
+                        const value = parseInt(selected.value);
+                        const isCorrect = value === q.answer;
+                        if (isCorrect) correctCount++;
+                        const options = document.querySelectorAll(`.quiz-question[data-qindex="${idx}"] .quiz-option`);
+                        options.forEach((opt, oi) => {
+                            opt.classList.remove('correct', 'wrong');
+                            if (oi === q.answer) opt.classList.add('correct');
+                            if (oi === value && !isCorrect) opt.classList.add('wrong');
+                        });
+                    } else { allAnswered = false; }
+                });
+                const resultDiv = document.getElementById('quizResult');
+                resultDiv.style.display = 'block';
+                if (!allAnswered) {
+                    resultDiv.textContent = '⚠️ Jawab semua soal!';
+                    resultDiv.className = 'quiz-result fail';
+                    return;
+                }
+                const percentage = Math.round((correctCount / total) * 100);
+                if (percentage >= 70) {
+                    resultDiv.textContent = `✅ ${correctCount}/${total} benar (${percentage}%). Lulus!`;
+                    resultDiv.className = 'quiz-result pass';
+                } else {
+                    resultDiv.textContent = `❌ ${correctCount}/${total} benar (${percentage}%). Coba lagi!`;
+                    resultDiv.className = 'quiz-result fail';
+                }
+            });
+
+        } else {
+            subContentContainer.innerHTML = `<p style="color:rgba(255,255,255,0.3); padding:20px 0;">Belum ada soal.</p>`;
+            if (currentUser === 'admin') {
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn btn-success';
+                addBtn.textContent = '+ Tambah Soal';
+                addBtn.style.marginTop = '15px';
+                addBtn.onclick = function() { addQuestionToLatihan(item.id); };
+                subContentContainer.appendChild(addBtn);
+            }
+        }
+
+        updateSubActions(item, 'latihan');
+        subPageOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function updateSubActions(item, type) {
+        if (currentUser === 'admin') {
+            subEditActions.style.display = 'flex';
+            document.getElementById('subEditBtn').onclick = function() { openEditor(type, item.id); };
+            document.getElementById('subDeleteBtn').onclick = function() {
+                if (confirm(`Hapus ${type} ini?`)) {
+                    if (type === 'materi') {
+                        materiList = materiList.filter(m => m.id !== item.id);
+                    } else {
+                        latihanList = latihanList.filter(l => l.id !== item.id);
+                    }
+                    saveAll();
+                    renderAll();
+                    closeSubPage();
+                    showToast('🗑️ Dihapus.', 'info');
+                }
+            };
+        } else {
+            subEditActions.style.display = 'none';
+        }
+    }
+
+    function closeSubPage() {
+        subPageOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        subPageItem = null;
+    }
+
+    // ============================================
+    // EDITOR OVERLAY
+    // ============================================
+    function openEditor(type, id) {
+        const list = type === 'materi' ? materiList : latihanList;
+        const item = list.find(x => x.id === id);
+        if (!item) return;
+        editingItem = { type, id };
+        document.getElementById('editorTitle').textContent = `✏️ Edit ${type === 'materi' ? 'Materi' : 'Latihan'}`;
+        document.getElementById('editItemJudul').value = item.judul || '';
+        document.getElementById('editItemDeskripsi').value = item.deskripsi || '';
+
+        if (type === 'materi') {
+            document.getElementById('editItemImageGroup').style.display = 'block';
+            document.getElementById('editItemSubGroup').style.display = 'block';
+            document.getElementById('editItemQuestionsGroup').style.display = 'none';
+            document.getElementById('editItemImage').value = item.image || '';
+            document.getElementById('editItemSub').value = item.sub ? item.sub.join(', ') : '';
+        } else {
+            document.getElementById('editItemImageGroup').style.display = 'none';
+            document.getElementById('editItemSubGroup').style.display = 'none';
+            document.getElementById('editItemQuestionsGroup').style.display = 'block';
+            document.getElementById('editItemQuestions').value = JSON.stringify(item.questions || [], null, 2);
+        }
+
+        document.getElementById('editorOverlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditor() {
+        document.getElementById('editorOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+        editingItem = null;
+    }
+
+    // ============================================
+    // EDIT / DELETE QUESTION (global)
+    // ============================================
+    window.editQuestion = function(latihanId, qIndex) {
+        const latihan = latihanList.find(l => l.id === latihanId);
+        if (!latihan || !latihan.questions[qIndex]) return;
+        const q = latihan.questions[qIndex];
+        const newQuestion = prompt('Edit soal:', q.question);
+        if (newQuestion === null) return;
+        const newOptions = prompt('Edit pilihan (pisahkan koma):', q.options.join(', '));
+        if (newOptions === null) return;
+        const options = newOptions.split(',').map(s => s.trim()).filter(s => s);
+        if (options.length < 2) { showToast('⚠️ Minimal 2 pilihan!', 'error'); return; }
+        const newAnswer = parseInt(prompt(`Jawaban benar (0-${options.length-1}):`, q.answer));
+        if (isNaN(newAnswer) || newAnswer < 0 || newAnswer >= options.length) { showToast('⚠️ Jawaban tidak valid!', 'error'); return; }
+        q.question = newQuestion.trim();
+        q.options = options;
+        q.answer = newAnswer;
+        saveAll();
+        renderAll();
+        closeSubPage();
+        setTimeout(() => openLatihanPage(latihan), 300);
+        showToast('✅ Soal diperbarui!', 'success');
+    };
+
+    window.deleteQuestion = function(latihanId, qIndex) {
+        if (!confirm('Hapus soal ini?')) return;
+        const latihan = latihanList.find(l => l.id === latihanId);
+        if (!latihan) return;
+        latihan.questions.splice(qIndex, 1);
+        saveAll();
+        renderAll();
+        closeSubPage();
+        setTimeout(() => openLatihanPage(latihan), 300);
+        showToast('🗑️ Soal dihapus.', 'info');
+    };
+
+    function addQuestionToLatihan(latihanId) {
+        const latihan = latihanList.find(l => l.id === latihanId);
+        if (!latihan) return;
+        const question = prompt('Masukkan soal:');
+        if (!question) return;
+        const optionsText = prompt('Masukkan pilihan (pisahkan koma):');
+        if (!optionsText) return;
+        const options = optionsText.split(',').map(s => s.trim()).filter(s => s);
+        if (options.length < 2) { showToast('⚠️ Minimal 2 pilihan!', 'error'); return; }
+        const answer = parseInt(prompt(`Jawaban benar (0-${options.length-1}):`));
+        if (isNaN(answer) || answer < 0 || answer >= options.length) { showToast('⚠️ Jawaban tidak valid!', 'error'); return; }
+        if (!latihan.questions) latihan.questions = [];
+        latihan.questions.push({ question: question.trim(), image: '', options, answer });
+        saveAll();
+        renderAll();
+        closeSubPage();
+        setTimeout(() => openLatihanPage(latihan), 300);
+        showToast('✅ Soal ditambahkan!', 'success');
+    }
+
+    // ============================================
+    // SAVE EDITOR
+    // ============================================
+    document.getElementById('saveItemEditBtn').addEventListener('click', function() {
+        if (!editingItem) return;
+        const { type, id } = editingItem;
+        const list = type === 'materi' ? materiList : latihanList;
+        const item = list.find(x => x.id === id);
+        if (!item) return;
+
+        const judul = document.getElementById('editItemJudul').value.trim();
+        const deskripsi = document.getElementById('editItemDeskripsi').value.trim();
+        if (!judul) { showToast('⚠️ Judul wajib diisi!', 'error'); return; }
+        item.judul = judul;
+        item.deskripsi = deskripsi || 'Deskripsi';
+
+        if (type === 'materi') {
+            item.image = document.getElementById('editItemImage').value.trim() || '';
+            const subText = document.getElementById('editItemSub').value.trim();
+            item.sub = subText ? subText.split(',').map(s => s.trim()).filter(s => s) : [];
+        } else {
+            try {
+                const questions = JSON.parse(document.getElementById('editItemQuestions').value);
+                if (!Array.isArray(questions)) throw new Error('Harus array');
+                item.questions = questions;
+            } catch (e) {
+                showToast('⚠️ Format soal JSON tidak valid!', 'error');
+                return;
+            }
+        }
+
+        saveAll();
+        renderAll();
+        closeEditor();
+        if (subPageOverlay.classList.contains('active') && subPageItem && subPageItem.id === id) {
+            if (type === 'materi') openMateriPage(item);
+            else openLatihanPage(item);
+        }
+        showToast('✅ Konten berhasil diperbarui!', 'success');
+    });
+
+    document.getElementById('cancelItemEditBtn').addEventListener('click', closeEditor);
+    document.getElementById('closeEditor').addEventListener('click', closeEditor);
+    document.getElementById('editorOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeEditor();
+    });
+
+    // ============================================
+    // LOGIN / LOGOUT
+    // ============================================
+    let selectedRole = 'admin';
+
+    roleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            roleBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedRole = this.dataset.role;
+            loginError.textContent = '';
+        });
+    });
+
+    document.getElementById('loginToggle').addEventListener('click', function() {
+        loginModal.classList.add('active');
+        loginPassword.value = '';
+        loginError.textContent = '';
+        document.querySelector('.role-selector button[data-role="admin"]').classList.add('active');
+        selectedRole = 'admin';
+    });
+
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+        loginModal.classList.remove('active');
+    });
+    loginModal.addEventListener('click', function(e) {
+        if (e.target === this) loginModal.classList.remove('active');
+    });
+
+    document.getElementById('loginSubmitBtn').addEventListener('click', function() {
+        const password = loginPassword.value.trim();
+        if (!password) { loginError.textContent = '⚠️ Masukkan password!'; return; }
+        let valid = false;
+        if (selectedRole === 'admin' && password === 'akuganteng') {
+            valid = true;
+            currentUser = 'admin';
+        } else if (selectedRole === 'user' && password === 'siswa') {
+            valid = true;
+            currentUser = 'user';
+        }
+        if (valid) {
+            loginModal.classList.remove('active');
+            updateUIForUser();
+            renderAll();
+            try {
+                localStorage.setItem('edulearn_session', JSON.stringify({ role: currentUser, timestamp: Date.now() }));
+            } catch (e) {}
+            showToast(`✅ Login sebagai ${selectedRole === 'admin' ? 'Admin' : 'Siswa'}`, 'success');
+        } else {
+            loginError.textContent = '❌ Password salah untuk peran ini!';
+        }
+    });
+
+    loginPassword.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('loginSubmitBtn').click();
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        currentUser = null;
+        localStorage.removeItem('edulearn_session');
+        updateUIForUser();
+        renderAll();
+        showToast('👋 Logout berhasil.', 'info');
+    });
+
+    function updateUIForUser() {
+        if (currentUser === 'admin') {
+            userBadge.textContent = '👑 Admin';
+            userBadge.className = 'user-badge admin';
+            document.getElementById('loginToggle').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+        } else if (currentUser === 'user') {
+            userBadge.textContent = '👤 Siswa';
+            userBadge.className = 'user-badge user';
+            document.getElementById('loginToggle').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+        } else {
+            userBadge.textContent = '👤 Tamu';
+            userBadge.className = 'user-badge';
+            document.getElementById('loginToggle').style.display = 'inline-block';
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
+    }
+
+    // ============================================
+    // TAMBAH MATERI & LATIHAN (admin)
+    // ============================================
+    document.getElementById('showAddMateriBtn').addEventListener('click', function() {
+        const form = document.getElementById('addMateriForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('cancelAddMateriBtn').addEventListener('click', function() {
+        document.getElementById('addMateriForm').style.display = 'none';
+        ['newMateriJudul','newMateriDeskripsi','newMateriImage','newMateriSub'].forEach(id => document.getElementById(id).value = '');
+    });
+    document.getElementById('saveNewMateriBtn').addEventListener('click', function() {
+        const judul = document.getElementById('newMateriJudul').value.trim();
+        const deskripsi = document.getElementById('newMateriDeskripsi').value.trim();
+        const image = document.getElementById('newMateriImage').value.trim();
+        const subText = document.getElementById('newMateriSub').value.trim();
+        if (!judul) { showToast('⚠️ Judul wajib diisi!', 'error'); return; }
+        const sub = subText ? subText.split(',').map(s => s.trim()).filter(s => s) : [];
+        materiList.push({ id: 'm' + Date.now(), judul, deskripsi: deskripsi || 'Deskripsi', image: image || '', sub });
+        saveAll();
+        renderAll();
+        document.getElementById('addMateriForm').style.display = 'none';
+        ['newMateriJudul','newMateriDeskripsi','newMateriImage','newMateriSub'].forEach(id => document.getElementById(id).value = '');
+        showToast('✅ Materi ditambahkan!', 'success');
+    });
+
+    document.getElementById('showAddLatihanBtn').addEventListener('click', function() {
+        const form = document.getElementById('addLatihanForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('cancelAddLatihanBtn').addEventListener('click', function() {
+        document.getElementById('addLatihanForm').style.display = 'none';
+        ['newLatihanJudul','newLatihanDeskripsi'].forEach(id => document.getElementById(id).value = '');
+    });
+    document.getElementById('saveNewLatihanBtn').addEventListener('click', function() {
+        const judul = document.getElementById('newLatihanJudul').value.trim();
+        const deskripsi = document.getElementById('newLatihanDeskripsi').value.trim();
+        if (!judul) { showToast('⚠️ Judul wajib diisi!', 'error'); return; }
+        latihanList.push({ id: 'l' + Date.now(), judul, deskripsi: deskripsi || 'Deskripsi', questions: [] });
+        saveAll();
+        renderAll();
+        document.getElementById('addLatihanForm').style.display = 'none';
+        ['newLatihanJudul','newLatihanDeskripsi'].forEach(id => document.getElementById(id).value = '');
+        showToast('✅ Latihan ditambahkan!', 'success');
+    });
+
+    // ============================================
+    // SAVE HEADER
+    // ============================================
+    document.getElementById('saveHeaderBtn').addEventListener('click', function() {
+        if (currentUser !== 'admin') { showToast('⚠️ Login sebagai admin!', 'error'); return; }
+        headerData = {
+            siteTitle: document.getElementById('editSiteTitle').value.trim() || 'EduLearn',
+            heroTitle: document.getElementById('editHeroTitle').value.trim() || 'Mulai Belajar Sekarang',
+            heroSubtitle: document.getElementById('editHeroSubtitle').value.trim() || 'Platform pembelajaran dengan Firebase.'
+        };
+        saveAll();
+        renderHeader();
+        showToast('✅ Header berhasil diperbarui!', 'success');
+    });
+
+    // ============================================
+    // NAVIGASI
+    // ============================================
+    document.querySelectorAll('.nav-links a[data-page]').forEach(link => {
+        link.addEventListener('click', function() {
+            const page = this.dataset.page;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-links a[data-page]').forEach(a => a.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+            this.classList.add('active');
+            closeSubPage();
+        });
+    });
+
+    // ============================================
+    // ESCAPE KEY
+    // ============================================
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeSubPage();
+            closeEditor();
+            loginModal.classList.remove('active');
+        }
+    });
+
+    // ============================================
+    // INIT
+    // ============================================
+    loadAll();
+    renderAll();
+    updateUIForUser();
+
+    // Cek session
+    try {
+        const session = localStorage.getItem('edulearn_session');
+        if (session) {
+            const data = JSON.parse(session);
+            if (data && data.role && data.timestamp && (Date.now() - data.timestamp < 3600000)) {
+                currentUser = data.role;
+                updateUIForUser();
+                renderAll();
+            } else {
+                localStorage.removeItem('edulearn_session');
+            }
+        }
+    } catch (e) {}
+
+    // ============================================
+    // MULAI SINKRONISASI FIREBASE
+    // ============================================
+    pullFromFirebase();
+
+    console.log('✅ EduLearn dengan Firebase siap digunakan!');
+    console.log('👑 Admin password: akuganteng');
+    console.log('👤 Siswa password: siswa');
+    console.log('🔥 Data tersimpan di Firebase Realtime Database.');
+
+</script>
+</body>
+</html>
