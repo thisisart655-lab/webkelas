@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelas Ceria — Belajar Jadi Seru</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= LATAR BELAKANG ================= -->
+<div class="bg"></div>
+<div class="bg-grid"></div>
+<div class="bg-deko">
+  <div class="matahari"></div>
+  <div class="awan c1"></div>
+  <div class="awan c2"></div>
+  <div class="awan c3"></div>
+  <div class="spark s1"></div>
+  <div class="spark s2"></div>
+  <div class="spark s3"></div>
+  <div class="spark s4"></div>
+</div>
+
+<!-- ================= LAYAR LOGIN ================= -->
+<section id="layarLogin" class="layar aktif">
+  <div class="kartu-login glass coret">
+    <div class="merek">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 6.6C10.4 5 8.4 4.4 6 4.4H3v13.2h3c2.4 0 4.4.6 6 2 1.6-1.4 3.6-2 6-2h3V4.4h-3c-2.4 0-4.4.6-6 2.2z"/>
+          <path d="M12 6.6v13"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Kelas Ceria</h1>
+        <p>Belajar jadi seru, kayak main di sekolah</p>
+      </div>
+    </div>
+
+    <div class="tab" id="tabMasuk">
+      <button type="button" data-tab="masuk" class="on">Masuk</button>
+      <button type="button" data-tab="daftar">Daftar</button>
+    </div>
+
+    <form id="formAuth" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" placeholder="mis. budi" autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="minimal 6 karakter">
+      </div>
+      <div class="field" id="wrapKelas" hidden>
+        <label for="kelas">Kelas</label>
+        <select id="kelas"></select>
+      </div>
+      <div class="field" id="wrapKode" hidden>
+        <label for="kode">Kode Guru <span class="opsional">(isi hanya jika kamu guru)</span></label>
+        <input id="kode" placeholder="kode rahasia guru">
+      </div>
+      <div class="pesan" id="pesanLogin"></div>
+      <button class="btn btn-utama btn-block" id="tombolAuth" type="submit">Masuk</button>
+    </form>
+
+    <p class="kaki">Kelas Ceria · dibuat dengan HTML, CSS &amp; JavaScript</p>
+  </div>
+</section>
+
+<!-- ================= LAYAR APLIKASI ================= -->
+<section id="layarApp" class="layar">
+  <header class="topbar glass coret">
+    <div class="merek-mini">
+      <div class="logo kecil">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 6.6C10.4 5 8.4 4.4 6 4.4H3v13.2h3c2.4 0 4.4.6 6 2 1.6-1.4 3.6-2 6-2h3V4.4h-3c-2.4 0-4.4.6-6 2.2z"/>
+          <path d="M12 6.6v13"/>
+        </svg>
+      </div>
+      <div>
+        <strong>Kelas Ceria</strong>
+        <span id="topbarSub">Selamat datang</span>
+      </div>
+    </div>
+    <div class="topbar-kanan">
+      <div class="pengguna">
+        <div class="avatar" id="avatar">?</div>
+        <div>
+          <strong id="namaUser">-</strong>
+          <span id="peranUser">-</span>
+        </div>
+      </div>
+      <button class="btn btn-lembut" id="tombolKeluar" type="button">Keluar</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar glass coret" id="sidebar"></aside>
+    <main id="konten"></main>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
